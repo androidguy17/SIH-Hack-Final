@@ -33,7 +33,13 @@ import java.util.*
 class MainActivity : AppCompatActivity() {
     private var tts: TextToSpeech? = null
     private var speechRecog: SpeechRecognizer? = null
-    var  ref:FirebaseDatabase?=null
+
+
+   var Humidity:String?=null
+    var Temp:String?=null
+    var AirQuality:String?=null
+    var IR:String ?=null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -58,7 +64,11 @@ class MainActivity : AppCompatActivity() {
         initializeTextToSpeech()
         initializeSpeechRecognizer()
 
-        firebase()
+        firebaseIR()
+        firebaseTemp()
+        firebaseAirQuality()
+        firebaseHumidity()
+
 
     }
 
@@ -162,8 +172,81 @@ class MainActivity : AppCompatActivity() {
         public const val MY_PERMISSIONS_REQUEST_RECORD_AUDIO = 1
     }
 
+    fun firebasePushIR(){
 
-    fun firebase(){
+
+        var refout =FirebaseDatabase.getInstance().getReference("IROUT")
+
+        if (IR != null) {
+            if(IR!!.toInt()>800){
+                refout.setValue(1)
+
+            }
+
+            if(IR!!.toInt()<200){
+
+                refout.setValue(0)
+            }
+        }
+    }
+    fun firebasePushTemp(){
+
+
+        var refout =FirebaseDatabase.getInstance().getReference("TEMPOUT")
+
+        if (Temp != null) {
+            if(Temp!!.toInt()>40){
+                refout.setValue(1)
+
+            }
+
+            if(Temp!!.toInt()<20){
+
+                refout.setValue(0)
+            }
+        }
+    }
+    fun firebasePushHumid(){
+
+
+        var refout =FirebaseDatabase.getInstance().getReference("HUMIDOUT")
+
+        if (Humidity != null) {
+            if(Humidity!!.toInt()>40){
+                refout.setValue(1)
+
+            }
+
+            if(Humidity!!.toInt()<20){
+
+                refout.setValue(0)
+            }
+        }
+
+
+    }
+    fun firebasePushAir(){
+
+
+        var refout =FirebaseDatabase.getInstance().getReference("AIROUR")
+
+        if (AirQuality != null) {
+            if(AirQuality!!.toInt()>700){
+                refout.setValue(1)
+
+            }
+
+            if(AirQuality!!.toInt()<699){
+
+                refout.setValue(0)
+            }
+        }
+
+    }
+
+
+
+    fun firebaseIR(){
 
         var ref = FirebaseDatabase.getInstance().getReference("/IR")
 
@@ -173,8 +256,69 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onDataChange(p0: DataSnapshot) {
-              var v = p0.getValue()
-                txt.text=v.toString()
+               IR = p0.getValue().toString()
+                txt.text=IR.toString()
+                firebasePushIR()
+
+            }
+
+
+        })
+
+
+    }
+    fun firebaseTemp(){
+        var ref = FirebaseDatabase.getInstance().getReference("/Temp")
+
+        ref.addValueEventListener(object :ValueEventListener{
+            override fun onCancelled(p0: DatabaseError) {
+                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            }
+
+            override fun onDataChange(p0: DataSnapshot) {
+                Temp = p0.getValue().toString()
+                temp.text = Temp.toString()
+                firebasePushTemp()
+
+            }
+
+
+        })
+
+
+    }
+    fun firebaseHumidity(){
+
+        var ref = FirebaseDatabase.getInstance().getReference("/Humidity")
+
+        ref.addValueEventListener(object :ValueEventListener{
+            override fun onCancelled(p0: DatabaseError) {
+                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            }
+
+            override fun onDataChange(p0: DataSnapshot) {
+                Humidity = p0.getValue().toString()
+                humid.text = Humidity.toString()
+                firebasePushHumid()
+            }
+
+
+        })
+
+    }
+    fun firebaseAirQuality(){
+
+        var ref = FirebaseDatabase.getInstance().getReference("/Air Quality")
+
+        ref.addValueEventListener(object :ValueEventListener{
+            override fun onCancelled(p0: DatabaseError) {
+                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            }
+
+            override fun onDataChange(p0: DataSnapshot) {
+                AirQuality = p0.getValue().toString()
+                airquality.text=AirQuality.toString()
+                firebasePushAir()
             }
 
 
