@@ -14,6 +14,9 @@ import android.text.format.DateUtils
 import android.view.View
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.anychart.AnyChart
 import com.anychart.AnyChartView
 import com.anychart.chart.common.dataentry.DataEntry
@@ -27,7 +30,12 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.xwray.groupie.GroupAdapter
+import com.xwray.groupie.GroupieViewHolder
+import com.xwray.groupie.Item
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.token.view.*
+import kotlinx.android.synthetic.main.token2.view.*
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
@@ -35,16 +43,39 @@ class MainActivity : AppCompatActivity() {
     private var speechRecog: SpeechRecognizer? = null
 
 
+
    var Humidity:String?=null
     var Temp:String?=null
     var AirQuality:String?=null
     var IR:String ?=null
+    val adapter = GroupAdapter<GroupieViewHolder>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        charts()
+
+        val layoutManager= GridLayoutManager(this, 2)
+        layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+            override fun getSpanSize(position: Int): Int {
+                return when (position) {
+                    0 -> 1
+                    1 -> 1
+                    2 ->1
+                    3 ->1
+                    else -> 2
+                }
+            }
+        }
+        recyclerview.layoutManager = layoutManager
+
+        recyclerview.adapter=adapter
+
+
+
+
+
         permission()
+
 
 
         button.setOnClickListener(View.OnClickListener {
@@ -69,8 +100,41 @@ class MainActivity : AppCompatActivity() {
         firebaseAirQuality()
         firebaseHumidity()
 
+        adapter.add(Token1())
+        adapter.add(Token2())
+        adapter.add(Token3())
+        adapter.add(Token4())
+
+
+
+
 
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     private fun speak(message: String) {
@@ -116,7 +180,7 @@ class MainActivity : AppCompatActivity() {
                 finish()
             } else {
                 tts!!.language = Locale.US
-                speak("Hello there, I am ready to start our conversation")
+                //speak("Hello there, I am ready to start our conversation")
             }
         })
     }
@@ -175,7 +239,7 @@ class MainActivity : AppCompatActivity() {
     fun firebasePushIR(){
 
 
-        var refout =FirebaseDatabase.getInstance().getReference("IROUT")
+        var refout =FirebaseDatabase.getInstance().getReference("LDROUT")
 
         if (IR != null) {
             if(IR!!.toInt()>800){
@@ -195,12 +259,12 @@ class MainActivity : AppCompatActivity() {
         var refout =FirebaseDatabase.getInstance().getReference("TEMPOUT")
 
         if (Temp != null) {
-            if(Temp!!.toInt()>40){
+            if(Temp!!.toFloat()>40){
                 refout.setValue(1)
 
             }
 
-            if(Temp!!.toInt()<20){
+            if(Temp!!.toFloat()<20){
 
                 refout.setValue(0)
             }
@@ -212,12 +276,12 @@ class MainActivity : AppCompatActivity() {
         var refout =FirebaseDatabase.getInstance().getReference("HUMIDOUT")
 
         if (Humidity != null) {
-            if(Humidity!!.toInt()>40){
+            if(Humidity!!.toFloat()>40){
                 refout.setValue(1)
 
             }
 
-            if(Humidity!!.toInt()<20){
+            if(Humidity!!.toFloat()<20){
 
                 refout.setValue(0)
             }
@@ -248,7 +312,7 @@ class MainActivity : AppCompatActivity() {
 
     fun firebaseIR(){
 
-        var ref = FirebaseDatabase.getInstance().getReference("/IR")
+        var ref = FirebaseDatabase.getInstance().getReference("/LDR")
 
         ref.addValueEventListener(object :ValueEventListener{
             override fun onCancelled(p0: DatabaseError) {
@@ -257,7 +321,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onDataChange(p0: DataSnapshot) {
                IR = p0.getValue().toString()
-                txt.text=IR.toString()
+
                 firebasePushIR()
 
             }
@@ -277,7 +341,10 @@ class MainActivity : AppCompatActivity() {
 
             override fun onDataChange(p0: DataSnapshot) {
                 Temp = p0.getValue().toString()
-                temp.text = Temp.toString()
+
+
+
+
                 firebasePushTemp()
 
             }
@@ -298,7 +365,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onDataChange(p0: DataSnapshot) {
                 Humidity = p0.getValue().toString()
-                humid.text = Humidity.toString()
+
                 firebasePushHumid()
             }
 
@@ -317,7 +384,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onDataChange(p0: DataSnapshot) {
                 AirQuality = p0.getValue().toString()
-                airquality.text=AirQuality.toString()
+
                 firebasePushAir()
             }
 
@@ -381,109 +448,144 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    inner class Token1(): Item<GroupieViewHolder>(){
 
-    fun charts(){
-        val anyChartView: AnyChartView = findViewById(R.id.any_chart_view)
-        anyChartView.setProgressBar(findViewById(R.id.progress_bar))
-        val cartesian = AnyChart.line()
-        cartesian.animation(true)
-        cartesian.padding(10.0, 20.0, 5.0, 20.0)
-        cartesian.crosshair().enabled(true)
-        cartesian.crosshair()
-            .yLabel(true) // TODO ystroke
-            .yStroke(
-                null as Stroke?,
-                null,
-                null,
-                null as String?,
-                null as String?
-            )
-        cartesian.tooltip().positionMode(TooltipPositionMode.POINT)
-        cartesian.title("Trend of Sales of the Most Popular Products of ACME Corp.")
-        cartesian.yAxis(0).title("Number of Bottles Sold (thousands)")
-        cartesian.xAxis(0).labels().padding(5.0, 5.0, 5.0, 5.0)
-        val seriesData: MutableList<DataEntry> = ArrayList()
-        seriesData.add(CustomDataEntry("9:00", 0.0, 0.0, 0.0))
-        seriesData.add(CustomDataEntry("10:00", 6.0, 3.0, 9.8))
-        seriesData.add(CustomDataEntry("1986", 3.6, 2.3, 2.8))
-        seriesData.add(CustomDataEntry("1987", 7.1, 4.0, 4.1))
-        seriesData.add(CustomDataEntry("1988", 8.5, 6.2, 5.1))
-        seriesData.add(CustomDataEntry("1989", 9.2, 11.8, 6.5))
-        seriesData.add(CustomDataEntry("1990", 10.1, 13.0, 12.5))
-        seriesData.add(CustomDataEntry("1991", 11.6, 13.9, 18.0))
-        seriesData.add(CustomDataEntry("1992", 16.4, 18.0, 21.0))
-        seriesData.add(CustomDataEntry("1993", 18.0, 23.3, 20.3))
-        seriesData.add(CustomDataEntry("1994", 13.2, 24.7, 19.2))
-        seriesData.add(CustomDataEntry("1995", 12.0, 18.0, 14.4))
-        seriesData.add(CustomDataEntry("1996", 3.2, 15.1, 9.2))
-        seriesData.add(CustomDataEntry("1997", 4.1, 11.3, 5.9))
-        seriesData.add(CustomDataEntry("1998", 6.3, 14.2, 5.2))
-        seriesData.add(CustomDataEntry("1999", 9.4, 13.7, 4.7))
-        seriesData.add(CustomDataEntry("2000", 11.5, 9.9, 4.2))
-        seriesData.add(CustomDataEntry("2001", 13.5, 12.1, 1.2))
-        seriesData.add(CustomDataEntry("2002", 14.8, 13.5, 5.4))
-        seriesData.add(CustomDataEntry("2003", 16.6, 15.1, 6.3))
-        seriesData.add(CustomDataEntry("2004", 18.1, 17.9, 8.9))
-        seriesData.add(CustomDataEntry("2005", 17.0, 18.9, 10.1))
-        seriesData.add(CustomDataEntry("2006", 16.6, 20.3, 11.5))
-        seriesData.add(CustomDataEntry("2007", 14.1, 20.7, 12.2))
-        seriesData.add(CustomDataEntry("2008", 15.7, 21.6, 10))
-        seriesData.add(CustomDataEntry("2009", 12.0, 22.5, 8.9))
 
-        val set = Set.instantiate()
-        set.data(seriesData)
-        val series1Mapping = set.mapAs("{ x: 'x', value: 'value' }")
-        val series2Mapping = set.mapAs("{ x: 'x', value: 'value2' }")
-        val series3Mapping = set.mapAs("{ x: 'x', value: 'value3' }")
-        val series1 = cartesian.line(series1Mapping)
-        series1.name("Brandy")
-        series1.hovered().markers().enabled(true)
-        series1.hovered().markers()
-            .type(MarkerType.CIRCLE)
-            .size(4.0)
-        series1.tooltip()
-            .position("right")
-            .anchor(Anchor.LEFT_CENTER)
-            .offsetX(5.0)
-            .offsetY(5.0)
-        val series2 = cartesian.line(series2Mapping)
-        series2.name("Whiskey")
-        series2.hovered().markers().enabled(true)
-        series2.hovered().markers()
-            .type(MarkerType.CIRCLE)
-            .size(4.0)
-        series2.tooltip()
-            .position("right")
-            .anchor(Anchor.LEFT_CENTER)
-            .offsetX(5.0)
-            .offsetY(5.0)
-        val series3 = cartesian.line(series3Mapping)
-        series3.name("rohan")
-        series3.hovered().markers().enabled(true)
-        series3.hovered().markers()
-            .type(MarkerType.CIRCLE)
-            .size(4.0)
-        series3.tooltip()
-            .position("right")
-            .anchor(Anchor.LEFT_CENTER)
-            .offsetX(5.0)
-            .offsetY(5.0)
-        cartesian.legend().enabled(true)
-        cartesian.legend().fontSize(13.0)
-        cartesian.legend().padding(0.0, 0.0, 10.0, 0.0)
-        anyChartView.setChart(cartesian)
-    }
+        var ref = FirebaseDatabase.getInstance().getReference("/Temp")
 
-    private inner class CustomDataEntry internal constructor(
-        x: String?,
-        value: Number?,
-        value2: Number?,
-        value3: Number?
-    ) : ValueDataEntry(x, value) {
-        init {
-            setValue("value2", value2)
-            setValue("value3", value3)
+        override fun bind(viewHolder: GroupieViewHolder, position: Int) {
+
+            ref.addValueEventListener(object :ValueEventListener{
+                override fun onCancelled(p0: DatabaseError) {
+
+                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+                   var temp = p0.getValue()
+
+
+                    viewHolder.itemView.heading.text = "Temperature Reading"
+                    viewHolder.itemView.num.text = temp.toString()
+                }
+
+
+            })
+
+
+
+
+
         }
+
+        override fun getLayout(): Int {
+            return R.layout.token
+        }
+
+
     }
+
+
+
+
+
+    inner class Token2(): Item<GroupieViewHolder>(){
+
+        var ref = FirebaseDatabase.getInstance().getReference("/LDR")
+
+        override fun getLayout(): Int {
+            return R.layout.token2
+        }
+
+        override fun bind(viewHolder: GroupieViewHolder, position: Int) {
+
+            ref.addValueEventListener(object :ValueEventListener{
+                override fun onCancelled(p0: DatabaseError) {
+
+                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+                   var temp = p0.getValue()
+                    viewHolder.itemView.heading2.text = "Light Sensor"
+                    viewHolder.itemView.num2.text = temp.toString()
+                }
+
+
+            })
+
+
+
+
+
+        }
+
+
+    }
+
+    inner class Token3(): Item<GroupieViewHolder>(){
+
+
+        var ref = FirebaseDatabase.getInstance().getReference("/Humidity")
+
+
+            override fun getLayout(): Int {
+                return R.layout.token2
+            }
+
+            override fun bind(viewHolder: GroupieViewHolder, position: Int) {
+
+                ref.addValueEventListener(object :ValueEventListener{
+                    override fun onCancelled(p0: DatabaseError) {
+
+                    }
+
+                    override fun onDataChange(p0: DataSnapshot) {
+                        var temp = p0.getValue()
+                        viewHolder.itemView.heading2.text = "Humidity Reading"
+                        viewHolder.itemView.num2.text = temp.toString()
+                    }
+
+
+                })
+
+
+
+
+
+            }
+
+        }
+
+
+
+
+    inner class Token4(): Item<GroupieViewHolder>(){
+
+        var ref = FirebaseDatabase.getInstance().getReference("/Air Quality")
+        override fun getLayout(): Int {
+            return R.layout.token
+        }
+
+        override fun bind(viewHolder: GroupieViewHolder, position: Int) {
+
+            ref.addValueEventListener(object :ValueEventListener{
+                override fun onCancelled(p0: DatabaseError) {
+
+                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+                    var temp = p0.getValue()
+                    viewHolder.itemView.heading.text = "Air Quality"
+                    viewHolder.itemView.num.text = temp.toString()
+                }
+
+
+            })
+
+        }
+
+
+    }
+
+
 
 }
